@@ -1,0 +1,72 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>流光花瓣自检 v219</title>
+<style>
+body{margin:0;background:#efe6d2;font-family:system-ui,sans-serif;min-height:100vh;position:relative;}
+#card{position:fixed;left:58%;top:30%;width:120px;height:170px;background:#fbf3e2;border:1px solid #b99c74;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#7a5a3a;font-size:14px;z-index:1;text-align:center;}
+#album{position:fixed;left:6%;top:84%;width:44px;height:44px;background:#4a3d2e;border-radius:8px;z-index:1;}
+#diag{position:fixed;left:8px;right:8px;top:8px;z-index:99;background:rgba(255,255,255,.94);border:1px solid #b99c74;border-radius:8px;padding:8px 10px;font-size:12px;color:#4a3d2e;white-space:pre-wrap;word-break:break-all;}
+#bar{position:fixed;right:8px;bottom:8px;left:8px;z-index:99;display:flex;gap:8px;justify-content:flex-end;}
+button{font-size:14px;padding:8px 14px;border-radius:18px;border:1px solid #7a5a3a;background:#fbf3e2;color:#7a5a3a;}
+</style></head>
+<body>
+<div id="diag">流光自检页加载中…（v219）</div>
+<div id="card" class="fm-fcard">签卡<br>（花瓣起点）</div>
+<div id="album"></div>
+<div id="bar">
+  <button id="again">再放一次</button>
+  <button id="lowbtn">模拟低配放一次</button>
+</div>
+<script src="footmap.js?v=219"></script>
+<script>
+var lastMid='';
+// 播放中途（约 500ms，绽放/飘飞高峰）采样真实花瓣：数量、是否在屏、挂载层是否为 fx-layer
+function sampleMid(){
+  var n=0, vis=0, parents={};
+  document.querySelectorAll('img').forEach(function(im){
+    if((im.src||'').indexOf('data:image')!==0) return;
+    var cs=getComputedStyle(im), r=im.getBoundingClientRect();
+    n++;
+    var pid=im.parentElement ? (im.parentElement.id||im.parentElement.tagName) : 'NONE';
+    parents[pid]=(parents[pid]||0)+1;
+    if(parseFloat(cs.opacity)>0.3 && r.left>-60 && r.right<innerWidth+60 && r.top>-60 && r.bottom<innerHeight+60) vis++;
+  });
+  var parr=Object.keys(parents).map(function(k){return k+'×'+parents[k];}).join(', ')||'(无)';
+  lastMid='播放中途实测：花瓣 DOM='+n+' 屏内可见='+vis+'  挂载层='+parr+'（应全部为 fm-fx-layer）';
+}
+function show(t){document.getElementById('diag').textContent=t;}
+var playing=false;
+function fire(low){
+  if(!window.__fmPlayCollect){show('✗ footmap.js 没加载成功（检查 127.0.0.1:8000/footmap.js 是否能打开）');return;}
+  if(playing) return; playing=true;
+  show('正在播放（'+(low?'低配模式':'正常模式')+'）… 看粉色花瓣有没有飘进左下角黑莲');
+  lastMid='';
+  window.__fmPlayCollect({startEl:document.getElementById('card'),endEl:document.getElementById('album'),low:!!low});
+  setTimeout(sampleMid,500);
+  setTimeout(function(){
+    var d=window.__fmFxDiag();
+    var lines=['流光自检结果 '+(d.ver||'?(旧版)')+'（'+(low?'模拟低配':'按机型判定')+'）：',
+      '花瓣素材：'+d.assets.petals+'（embedded:ok 正常；FAIL=内嵌图损坏）',
+      '运行时花瓣加载失败：'+(d.assets.petalRuntimeFail||0),
+      '黑莲亮态：'+d.assets.blackBright+'  辉光：'+d.assets.glow,
+      '机型判定低配：'+d.hardLow+'（内存='+d.mem+'GB 核数='+d.cores+'；true 时花瓣减量为6~8朵，仍必须能看到）',
+      'body就绪：'+d.bodyOk+'  RAF：'+d.raf+'  WAAPI：'+d.waapi,
+      lastMid,
+      '--------------------------------',
+      '判定：能看到粉色花瓣飘进黑莲、且上方挂载层=fm-fx-layer 即正常；',
+      '若“屏内可见=0”，把本屏截图发回（面板文字很关键）。'];
+    show(lines.join('\n'));
+    playing=false;
+  },2600);
+}
+document.getElementById('again').addEventListener('click',function(){fire(false);});
+document.getElementById('lowbtn').addEventListener('click',function(){fire(true);});
+window.addEventListener('load',function(){
+  setTimeout(function(){
+    var d=window.__fmFxDiag?window.__fmFxDiag():null;
+    if(!d){show('✗ 流光模块未就绪，footmap.js 版本过旧（应为 v219）');return;}
+    if(location.search.indexOf('noauto')>=0){show('v219 已就绪，点底部按钮播放（可点“模拟低配”）。');return;}
+    fire(false);
+  },800);
+});
+</script>
+</body></html>
